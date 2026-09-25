@@ -36,6 +36,12 @@ end
 -- function: Download one repository file into the local ComputerCraft filesystem.
 local function download(path)
     local target = fs.combine("/", path)
+
+    if path == "config.lua" and fs.exists(target) then
+        print("Preserved -> " .. target)
+        return
+    end
+
     ensureParent(target)
     local response, err = http.get(BASE .. path)
     if not response then error("Download failed: " .. path .. ": " .. tostring(err), 0) end
