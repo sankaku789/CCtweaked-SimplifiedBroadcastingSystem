@@ -34,14 +34,23 @@ audio/melody/approach_after.dfpwm  任意
 
 ## 2線入力
 
-1台のComputerでbundled redstone 2線を監視します。初期値は元システムの入力色を引き継いでいます。
+1台のComputerでbundled redstone 2線を監視します。各入力は `track` と bundled color の組み合わせだけで定義します。
 
-| line | track | color |
-|---|---:|---|
-| line1 | 1 | `colors.red` |
-| line2 | 2 | `colors.blue` |
+| track | color |
+|---:|---|
+| 1 | `colors.red` |
+| 2 | `colors.blue` |
 
 sideは `top` です。すべて `config.lua` で変更できます。
+
+```lua
+lines = {
+    { track = 1, color = colors.red },
+    { track = 2, color = colors.blue },
+}
+```
+
+`track` は放送する番線番号の識別にも使われ、`audio/track/ni/<track>.dfpwm` の選択に使用します。
 
 起動時に既にHIGHの線は接近として扱わず、一度安定してLOWになった後にarmします。
 

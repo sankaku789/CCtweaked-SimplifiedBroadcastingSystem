@@ -7,19 +7,17 @@ end
 
 local function validateLines(lines)
     assert(type(lines) == "table" and #lines == 2, "input.bundled.lines must contain exactly two lines")
-    local ids = {}
+    local tracksSeen = {}
     local colorsSeen = {}
     for index, line in ipairs(lines) do
         assert(type(line) == "table", "input line must be a table")
-        assert(type(line.id) == "string" and line.id ~= "", "input line id is required")
         assert(type(line.track) == "number", "input line track must be a number")
         assert(type(line.color) == "number", "input line color must be a bundled color")
-        assert(not ids[line.id], "input line ids must be unique")
+        assert(not tracksSeen[line.track], "input line tracks must be unique")
         assert(not colorsSeen[line.color], "input line colors must be unique")
-        ids[line.id] = true
+        tracksSeen[line.track] = true
         colorsSeen[line.color] = true
         lines[index] = {
-            id = line.id,
             track = line.track,
             color = line.color,
         }
@@ -81,7 +79,7 @@ function ApproachInput:_monitorLine(line, onApproach)
             os.pullEvent("redstone")
         end
 
-        onApproach(line.id, line.track)
+        onApproach(line.track)
         self:_waitStableLow(line)
     end
 end

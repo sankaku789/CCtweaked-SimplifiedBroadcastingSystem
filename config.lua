@@ -10,8 +10,8 @@ return {
             side = "top",
             releaseDelaySeconds = 0.15,
             lines = {
-                { id = "line1", track = 1, color = colors.red },
-                { id = "line2", track = 2, color = colors.blue },
+                { track = 1, color = colors.red },
+                { track = 2, color = colors.blue },
             },
         },
     },
