@@ -21,6 +21,11 @@ while true do
 
     if ok then return end
 
+    -- Ctrl+T によるユーザー操作の終了はクラッシュとして扱わない。
+    if tostring(err) == "Terminated" then
+        return
+    end
+
     local runtime = config.runtime or {}
     local stableMs = math.max(0, tonumber(runtime.stableRunSeconds) or 60) * 1000
     if os.epoch("utc") - startedAt >= stableMs then failures = 0 end
