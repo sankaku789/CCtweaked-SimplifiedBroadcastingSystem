@@ -17,7 +17,7 @@ return {
     },
 
     speaker = {
-        volume = 3,
+        volume = 2,
         reconnectDelay = 1,
     },
 
@@ -28,7 +28,7 @@ return {
 
             -- 単独DFPWM import先。簡易放送の後に任意再生する。
             approachAfterPath = "approach_after.dfpwm",
-            approachAfterEnabled = true,
+            approachAfterEnabled = false,
         },
     },
 
