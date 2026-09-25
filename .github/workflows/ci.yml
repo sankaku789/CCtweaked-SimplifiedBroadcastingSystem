@@ -1,0 +1,20 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  lua-syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Luaをインストール
+        run: sudo apt-get update && sudo apt-get install -y lua5.4
+      - name: Lua構文を検証
+        run: |
+          find . -name '*.lua' -print0 | xargs -0 -n1 luac -p
+      - name: 単独DFPWMの保存先を検証
+        run: |
+          grep -F 'APPROACH_AFTER_MELODY_PATH = "/audio/melody/approach_after.dfpwm"' import_audio.lua
+          ! grep -F 'DEPARTURE_MELODY_PATH' import_audio.lua
