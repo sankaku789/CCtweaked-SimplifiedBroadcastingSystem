@@ -23,10 +23,10 @@ return {
 
     announcement = {
         melody = {
-            -- 元システムでは接近チャイムとして使用する既存asset。
+            -- Existing asset used as the approach chime in the original system.
             approachPath = "approach.dfpwm",
 
-            -- 単独DFPWM import先。簡易放送の後に任意再生する。
+            -- Import destination for a standalone DFPWM file. Played optionally after the simple announcement.
             approachAfterPath = "approach_after.dfpwm",
             approachAfterEnabled = false,
         },

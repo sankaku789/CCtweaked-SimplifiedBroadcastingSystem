@@ -13,10 +13,16 @@ local TERMINAL_ACTIONS = {
     [Protocol.ACTION.PLAY_REJECTED] = true,
 }
 
+-- function: Return the current UTC epoch time in milliseconds.
 local function now() return os.epoch("utc") end
+
+-- function: Return the numeric priority of one playback request.
 local function priorityOf(request) return tonumber(request.priority) or 0 end
+
+-- function: Return a human-readable label for one playback request.
 local function requestLabel(request) return tostring(request.label or request.requestId) end
 
+-- function: Create the authoritative local playback server and global queue.
 function PlaybackServer.new(options)
     return setmetatable({
         player = options.player,
@@ -29,16 +35,19 @@ function PlaybackServer.new(options)
     }, PlaybackServer)
 end
 
+-- function: Reply to the same-computer Client through the local event transport.
 function PlaybackServer:_reply(clientId, action, payload)
     if tonumber(clientId) ~= os.getComputerID() then return false end
     os.queueEvent(Protocol.PLAYBACK_EVENT, Protocol.message(action, payload, self.instanceId))
     return true
 end
 
+-- function: Store the latest lifecycle state for request deduplication.
 function PlaybackServer:_rememberSeen(key, action, payload)
     self.seen[key] = { action = action, payload = payload, updatedAt = now() }
 end
 
+-- function: Drop old terminal dedupe states while retaining queued and active requests.
 function PlaybackServer:_pruneSeen()
     local current = now()
     for key, state in pairs(self.seen) do
@@ -50,6 +59,7 @@ function PlaybackServer:_pruneSeen()
     end
 end
 
+-- function: Validate a Client playback request without interpreting railway semantics.
 function PlaybackServer:_validate(sourceId, request)
     if type(request) ~= "table" then return false, "request must be a table" end
     if type(request.requestId) ~= "string" or request.requestId == "" then
@@ -62,6 +72,7 @@ function PlaybackServer:_validate(sourceId, request)
     return true
 end
 
+-- function: Return the highest-priority oldest server-received queued item.
 function PlaybackServer:_bestIndex()
     local bestIndex, bestPriority, bestSequence
     for index, request in ipairs(self.queue) do
@@ -77,6 +88,7 @@ function PlaybackServer:_bestIndex()
     return bestIndex
 end
 
+-- function: Add one request to the authoritative playback queue.
 function PlaybackServer:_enqueue(request)
     self.sequence = self.sequence + 1
     request.serverSequence = self.sequence
@@ -88,6 +100,7 @@ function PlaybackServer:_enqueue(request)
     end
 end
 
+-- function: Submit a Client request while deduplicating by source and request ID.
 function PlaybackServer:submit(sourceId, request)
     self:_pruneSeen()
     sourceId = tonumber(sourceId)
@@ -127,6 +140,7 @@ function PlaybackServer:submit(sourceId, request)
     return true
 end
 
+-- function: Cancel one queued or active request owned by the local Client.
 function PlaybackServer:cancel(sourceId, requestId, reason)
     sourceId = tonumber(sourceId)
     requestId = tostring(requestId or "")
@@ -153,12 +167,14 @@ function PlaybackServer:cancel(sourceId, requestId, reason)
     return false
 end
 
+-- function: Store and send one terminal lifecycle event for a Client request.
 function PlaybackServer:_finishClientRequest(request, action, payload)
     local seenKey = ("%s:%s"):format(tostring(request.sourceId), request.requestId)
     self:_rememberSeen(seenKey, action, payload)
     self:_reply(request.sourceId, action, payload)
 end
 
+-- function: Return the next non-expired queued request.
 function PlaybackServer:_pop()
     while true do
         local index = self:_bestIndex()
@@ -174,6 +190,7 @@ function PlaybackServer:_pop()
     end
 end
 
+-- function: Wait until the authoritative queue contains a playable request.
 function PlaybackServer:_waitNext()
     while true do
         local request = self:_pop()
@@ -182,6 +199,7 @@ function PlaybackServer:_waitNext()
     end
 end
 
+-- function: Process queued playback requests sequentially and emit lifecycle events.
 function PlaybackServer:_processQueue()
     while true do
         local request = self:_waitNext()
@@ -236,6 +254,7 @@ function PlaybackServer:_processQueue()
     end
 end
 
+-- function: Run the local authoritative playback queue processor.
 function PlaybackServer:run()
     self:_processQueue()
 end

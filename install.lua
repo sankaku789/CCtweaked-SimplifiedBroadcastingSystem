@@ -18,6 +18,7 @@ local FILES = {
     "src/util/log.lua",
 }
 
+-- function: Ensure one directory and all of its parents exist.
 local function ensureDirectory(path)
     if path == "" or path == "." then return end
     if fs.exists(path) then return end
@@ -26,11 +27,13 @@ local function ensureDirectory(path)
     fs.makeDir(path)
 end
 
+-- function: Ensure the parent directory for one target file exists.
 local function ensureParent(path)
     local parent = fs.getDir(path)
     if parent ~= "" then ensureDirectory(parent) end
 end
 
+-- function: Download one repository file into the local ComputerCraft filesystem.
 local function download(path)
     local target = fs.combine("/", path)
     ensureParent(target)

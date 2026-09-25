@@ -3,12 +3,14 @@ local COPY_CHUNK_SIZE = 16 * 1024
 local AUDIO_ROOT = "/audio"
 local APPROACH_AFTER_MELODY_PATH = "/audio/melody/approach_after.dfpwm"
 
+-- function: Remove trailing NUL bytes and spaces from one TAR header field.
 local function cleanField(value)
     local zero = value:find("\0", 1, true)
     if zero then value = value:sub(1, zero - 1) end
     return value:gsub("%s+$", "")
 end
 
+-- function: Parse an octal number from one TAR header field.
 local function parseOctal(value, fieldName)
     value = cleanField(value):gsub("^%s+", "")
     if value == "" then return 0 end
@@ -17,6 +19,7 @@ local function parseOctal(value, fieldName)
     return parsed
 end
 
+-- function: Read exactly the requested number of bytes from one transferred file.
 local function readExact(handle, count)
     if count <= 0 then return "" end
     local chunks, total = {}, 0
@@ -32,6 +35,7 @@ local function readExact(handle, count)
     return table.concat(chunks)
 end
 
+-- function: Discard a fixed number of bytes from one transferred file.
 local function skipBytes(handle, count)
     local remaining = count
     while remaining > 0 do
@@ -41,6 +45,7 @@ local function skipBytes(handle, count)
     end
 end
 
+-- function: Check whether one TAR block contains only zero bytes.
 local function isZeroBlock(block)
     for index = 1, #block do
         if block:byte(index) ~= 0 then return false end
@@ -48,6 +53,7 @@ local function isZeroBlock(block)
     return true
 end
 
+-- function: Validate the checksum stored in one TAR header block.
 local function validateChecksum(header)
     local expected = parseOctal(header:sub(149, 156), "checksum")
     local actual = 0
@@ -57,6 +63,7 @@ local function validateChecksum(header)
     if actual ~= expected then error("Invalid TAR header checksum", 0) end
 end
 
+-- function: Parse the path, size, and type from one TAR header block.
 local function parseHeader(header)
     validateChecksum(header)
     local name = cleanField(header:sub(1, 100))
@@ -69,6 +76,7 @@ local function parseHeader(header)
     }
 end
 
+-- function: Normalize and validate an archive path before placing it below /audio.
 local function normalizeEntryPath(path)
     if type(path) ~= "string" or path:find("\\", 1, true) then
         error("Invalid TAR entry path", 0)
@@ -89,6 +97,7 @@ local function normalizeEntryPath(path)
     return table.concat(parts, "/")
 end
 
+-- function: Ensure one directory and all of its parents exist.
 local function ensureDirectory(path)
     if path == "" or path == "/" then return end
     if fs.exists(path) then
@@ -100,11 +109,13 @@ local function ensureDirectory(path)
     fs.makeDir(path)
 end
 
+-- function: Ensure the parent directory for one imported audio file exists.
 local function ensureParent(path)
     local parent = fs.getDir(path)
     if parent ~= "" then ensureDirectory(parent) end
 end
 
+-- function: Stream one transferred file into a temporary file and atomically replace the target.
 local function writeStream(input, target, size)
     ensureParent(target)
     local temporary = target .. ".import"
@@ -137,6 +148,7 @@ local function writeStream(input, target, size)
     return result
 end
 
+-- function: Extract supported DFPWM files from a TAR stream into the local audio directory.
 local function extractTar(handle)
     ensureDirectory(AUDIO_ROOT)
     local files, bytes, skipped = 0, 0, 0
@@ -165,6 +177,7 @@ local function extractTar(handle)
     return files, bytes, skipped
 end
 
+-- function: Select the first supported TAR or DFPWM file from one transfer event.
 local function selectImportFile(transferredFiles)
     local selected, kind
     for _, file in ipairs(transferredFiles.getFiles()) do
@@ -184,6 +197,7 @@ local function selectImportFile(transferredFiles)
     return selected, kind
 end
 
+-- function: Wait for one supported transfer and import its audio content.
 local function main()
     print("Simplified Broadcasting Audio Importer")
     print("Drop audio_pack.tar or one .dfpwm file onto this computer.")

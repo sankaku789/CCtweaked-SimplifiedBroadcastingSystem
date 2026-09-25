@@ -21,7 +21,7 @@ while true do
 
     if ok then return end
 
-    -- Ctrl+T によるユーザー操作の終了はクラッシュとして扱わない。
+    -- Treat a user-requested Ctrl+T termination as a normal shutdown.
     if tostring(err) == "Terminated" then
         return
     end

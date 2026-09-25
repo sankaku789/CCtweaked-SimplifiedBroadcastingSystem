@@ -1,6 +1,7 @@
 local Segment = {}
 Segment.__index = Segment
 
+-- function: Validate an audio asset ID before using it as a file name.
 local function validId(value)
     if value == nil then return false end
     local text = tostring(value)
@@ -8,6 +9,7 @@ local function validId(value)
     return not text:find("[/\\]")
 end
 
+-- function: Read a dotted configuration path from a Lua table.
 local function readConfigPath(root, path)
     if type(path) ~= "string" or path == "" then return nil end
     local value = root
@@ -18,6 +20,7 @@ local function readConfigPath(root, path)
     return value
 end
 
+-- function: Normalize a configured path while rejecting absolute and parent-relative paths.
 local function normalizeRelativePath(value)
     if type(value) ~= "string" or value == "" then return nil end
     if value:find("\\", 1, true) or value:sub(1, 1) == "/" or value:match("^%a:") then
@@ -32,6 +35,7 @@ local function normalizeRelativePath(value)
     return table.concat(parts, "/")
 end
 
+-- function: Build the expected DFPWM path for one validated audio asset ID.
 local function pathFromId(directory, value)
     if not validId(value) or type(directory) ~= "string" or directory == "" then
         return nil
@@ -39,14 +43,17 @@ local function pathFromId(directory, value)
     return fs.combine(directory, tostring(value) .. ".dfpwm")
 end
 
+-- function: Create a semantic announcement segment resolver.
 function Segment.new(config, definitions)
     return setmetatable({ config = config or {}, definitions = definitions or {} }, Segment)
 end
 
+-- function: Check whether an audio file exists and is not a directory.
 function Segment:exists(path)
     return type(path) == "string" and path ~= "" and fs.exists(path) and not fs.isDir(path)
 end
 
+-- function: Check whether a segment definition is enabled by configuration.
 function Segment:_isEnabled(definition)
     if definition.enabled == nil then return true end
     if type(definition.enabled) == "boolean" then return definition.enabled end
@@ -61,6 +68,7 @@ function Segment:_isEnabled(definition)
     error("invalid segment enabled condition")
 end
 
+-- function: Resolve a track-number segment from the announcement request.
 function Segment:_resolveTrack(definition, context)
     local request = context and context.request or nil
     local value = request and request.track or nil
@@ -70,6 +78,7 @@ function Segment:_resolveTrack(definition, context)
     return nil, "missing audio: " .. path
 end
 
+-- function: Resolve a configured relative DFPWM path inside a fixed audio directory.
 function Segment:_resolveConfigPath(definition, requirePlayable)
     local value = readConfigPath(self.config, definition.configPath)
     if value == nil or value == "" then value = definition.defaultPath end
@@ -84,6 +93,7 @@ function Segment:_resolveConfigPath(definition, requirePlayable)
     return { path }
 end
 
+-- function: Resolve a semantic segment ID into one or more audio playback items.
 function Segment:resolve(id, context, requirePlayable)
     local definition = self.definitions[id]
     if type(definition) == "string" then

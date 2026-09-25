@@ -12,6 +12,7 @@ local TERMINAL_ACTIONS = {
     [Protocol.ACTION.PLAY_REJECTED] = true,
 }
 
+-- function: Create a playback proxy bound to the local announcement server.
 function PlaybackClient.new(options)
     assert(options.localServer, "local playback server is required")
     return setmetatable({
@@ -23,20 +24,24 @@ function PlaybackClient.new(options)
     }, PlaybackClient)
 end
 
+-- function: Build a request ID unique to this boot instance.
 function PlaybackClient:_nextRequestId()
     self.requestSequence = self.requestSequence + 1
     return ("%s:%s"):format(tostring(self.instanceId), tostring(self.requestSequence))
 end
 
+-- function: Submit one playback request through the same-computer server path.
 function PlaybackClient:_submit(payload)
     self.localServer:submit(os.getComputerID(), payload)
     return true
 end
 
+-- function: Send cancellation for one local playback request.
 function PlaybackClient:_sendCancel(requestId, reason)
     return self.localServer:cancel(os.getComputerID(), requestId, reason)
 end
 
+-- function: Cancel the current request when a strictly higher local priority supersedes it.
 function PlaybackClient:interruptBelow(priority)
     priority = tonumber(priority) or 0
     if not self.current or priority <= self.current.priority then return false end
@@ -47,6 +52,7 @@ function PlaybackClient:interruptBelow(priority)
     return true
 end
 
+-- function: Wait for the next lifecycle response matching one request ID.
 function PlaybackClient:_waitResponse(requestId)
     while true do
         local event = { os.pullEvent() }
@@ -62,6 +68,7 @@ function PlaybackClient:_waitResponse(requestId)
     end
 end
 
+-- function: Submit one composed announcement and wait for its terminal lifecycle event.
 function PlaybackClient:playSegments(segments, priority, onAudioStarted, announcementType, expiresAt)
     local requestId = self:_nextRequestId()
     local request = {

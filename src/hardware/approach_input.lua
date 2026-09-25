@@ -1,10 +1,12 @@
 local ApproachInput = {}
 ApproachInput.__index = ApproachInput
 
+-- function: Return whether one bundled redstone color is currently active.
 local function active(side, color)
     return colors.test(redstone.getBundledInput(side), color)
 end
 
+-- function: Validate the two configured approach input lines.
 local function validateLines(lines)
     assert(type(lines) == "table" and #lines == 2, "input.bundled.lines must contain exactly two lines")
     local tracksSeen = {}
@@ -24,6 +26,7 @@ local function validateLines(lines)
     end
 end
 
+-- function: Create a two-line bundled redstone approach monitor.
 function ApproachInput.new(options)
     options = options or {}
     local bundled = options.bundled or {}
@@ -44,6 +47,7 @@ function ApproachInput.new(options)
     }, ApproachInput)
 end
 
+-- function: Wait until one input line has remained LOW long enough to re-arm it.
 function ApproachInput:_waitStableLow(line)
     while active(self.side, line.color) do
         os.pullEvent("redstone")
@@ -70,8 +74,9 @@ function ApproachInput:_waitStableLow(line)
     end
 end
 
+-- function: Monitor one approach line and emit one callback per armed rising activation.
 function ApproachInput:_monitorLine(line, onApproach)
-    -- 起動時/chunk load時にHIGHだった線は新規接近として扱わない。
+    -- Ignore a line that is already HIGH at startup or chunk load until it returns LOW.
     self:_waitStableLow(line)
 
     while true do
@@ -84,6 +89,7 @@ function ApproachInput:_monitorLine(line, onApproach)
     end
 end
 
+-- function: Monitor both configured approach lines concurrently.
 function ApproachInput:run(onApproach)
     assert(type(onApproach) == "function", "approach callback is required")
     local tasks = {}

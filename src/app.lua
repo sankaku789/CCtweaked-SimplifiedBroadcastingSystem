@@ -14,10 +14,12 @@ local PlaybackServer = require("core.server.playback")
 
 local app = {}
 
+-- function: Build a boot-unique instance ID for local playback request IDs.
 local function bootInstanceId()
     return ("%s:%s"):format(tostring(os.getComputerID()), tostring(os.epoch("utc")))
 end
 
+-- function: Build the local Client/Server stack and run input monitoring with playback processing.
 function app.run()
     log.info("Simplified Broadcasting System starting.")
 

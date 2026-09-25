@@ -3,6 +3,7 @@ Speakers.__index = Speakers
 
 local DRAIN_EVENT = "simplified_speaker_drain_complete"
 
+-- function: Discover every currently attached speaker peripheral.
 local function discover()
     local wrapped = { peripheral.find("speaker") }
     local result = {}
@@ -13,6 +14,7 @@ local function discover()
     return result
 end
 
+-- function: Refresh wrapped speaker peripherals from the current attachment state.
 function Speakers:_refresh()
     local devices = discover()
     if #devices == 0 then return false end
@@ -20,6 +22,7 @@ function Speakers:_refresh()
     return true
 end
 
+-- function: Wait until at least one speaker is available for playback.
 function Speakers:_waitForDevices(reason)
     if reason and self.logger then self.logger.warn(reason) end
     while not self:_refresh() do
@@ -28,6 +31,7 @@ function Speakers:_waitForDevices(reason)
     if self.logger then self.logger.info(("Connected %d speaker(s)."):format(#self.devices)) end
 end
 
+-- function: Create and connect the physical speaker set owned by the server.
 function Speakers.connect(options, logger)
     options = options or {}
     local self = setmetatable({
@@ -41,23 +45,27 @@ function Speakers.connect(options, logger)
     return self
 end
 
+-- function: Stop playback on every currently wrapped speaker.
 function Speakers:stop()
     for _, device in ipairs(self.devices) do pcall(device.peripheral.stop) end
     self.audioOutstanding = false
 end
 
+-- function: Drain stale speaker events before beginning a new playback session.
 function Speakers:drainEvents()
     sleep(0)
     os.queueEvent(DRAIN_EVENT)
     while os.pullEvent() ~= DRAIN_EVENT do end
 end
 
+-- function: Refresh speakers and clear stale playback state before one announcement.
 function Speakers:preparePlayback()
     self.audioOutstanding = false
     self:drainEvents()
     if not self:_refresh() then self:_waitForDevices("Speaker unavailable. Reconnecting...") end
 end
 
+-- function: Wait until every active speaker has consumed its current audio buffer.
 function Speakers:_waitAllReady(interruptEventName)
     local pending = {}
     local count = 0
@@ -79,6 +87,7 @@ function Speakers:_waitAllReady(interruptEventName)
     return true
 end
 
+-- function: Submit one PCM chunk to all connected speakers, waiting when they are busy.
 function Speakers:playChunk(audio, interruptEventName)
     while true do
         local accepted = true
@@ -100,6 +109,7 @@ function Speakers:playChunk(audio, interruptEventName)
     end
 end
 
+-- function: Wait until all submitted audio has finished playing.
 function Speakers:finishPlayback(interruptEventName)
     if not self.audioOutstanding then return true end
     return self:_waitAllReady(interruptEventName)

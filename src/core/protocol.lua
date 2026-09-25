@@ -20,6 +20,7 @@ Protocol.ACTION = {
 
 local messageSequence = 0
 
+-- function: Build one local playback lifecycle message envelope.
 function Protocol.message(action, payload, instanceId)
     messageSequence = messageSequence + 1
     return {
@@ -38,6 +39,7 @@ function Protocol.message(action, payload, instanceId)
     }
 end
 
+-- function: Check whether one message belongs to this simplified C/S protocol.
 function Protocol.matches(message)
     return type(message) == "table"
         and message.system == Protocol.SYSTEM

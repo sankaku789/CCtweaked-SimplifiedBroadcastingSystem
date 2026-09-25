@@ -1,21 +1,25 @@
 local Composer = {}
 Composer.__index = Composer
 
+-- function: Trim surrounding whitespace from one announcement pattern entry.
 local function trim(value)
     return value:match("^%s*(.-)%s*$")
 end
 
+-- function: Append every resolved playback item to the output list.
 local function appendAll(output, items)
     if not items then return end
     for _, item in ipairs(items) do output[#output + 1] = item end
 end
 
+-- function: Append resolver diagnostics to the diagnostic output list.
 local function appendDiagnostics(output, diagnostics)
     for _, diagnostic in ipairs(diagnostics or {}) do
         output[#output + 1] = diagnostic
     end
 end
 
+-- function: Parse optional and fallback syntax from one announcement pattern entry.
 local function parseEntry(entry)
     assert(type(entry) == "string", "announcement pattern entry must be a string")
     entry = trim(entry)
@@ -38,16 +42,19 @@ local function parseEntry(entry)
     return { optional = optional, primary = primary, fallback = fallback }
 end
 
+-- function: Create a composer from announcement patterns and one segment resolver.
 function Composer.new(patterns, resolver)
     return setmetatable({ patterns = patterns or {}, resolver = resolver }, Composer)
 end
 
+-- function: Resolve one semantic segment and normalize its diagnostic result.
 function Composer:_resolveSymbol(id, context, requirePlayable)
     local items, reason = self.resolver:resolve(id, context, requirePlayable)
     if not items and reason then return nil, { tostring(id) .. ": " .. tostring(reason) } end
     return items
 end
 
+-- function: Resolve one parsed pattern entry including fallback behavior.
 function Composer:_resolveEntry(entry, context)
     local parsed = parseEntry(entry)
     if parsed.fallback then
@@ -65,6 +72,7 @@ function Composer:_resolveEntry(entry, context)
     return items, parsed, diagnostics
 end
 
+-- function: Compose one announcement request into a complete ordered playback segment list.
 function Composer:compose(request)
     local pattern = self.patterns[request.type]
     if type(pattern) ~= "table" then

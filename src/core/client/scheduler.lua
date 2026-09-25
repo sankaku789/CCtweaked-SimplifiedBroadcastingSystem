@@ -1,6 +1,7 @@
 local Scheduler = {}
 Scheduler.__index = Scheduler
 
+-- function: Create the Client-side approach scheduler and pending request queue.
 function Scheduler.new(options)
     return setmetatable({
         config = options.config,
@@ -12,11 +13,13 @@ function Scheduler.new(options)
     }, Scheduler)
 end
 
+-- function: Return the configured priority for approach announcements.
 function Scheduler:_priority()
     local priorities = self.config.queue and self.config.queue.priorities or {}
     return tonumber(priorities.approach) or 0
 end
 
+-- function: Build the expiration timestamp for one newly created approach request.
 function Scheduler:_expiresAt()
     local ttl = self.config.queue and self.config.queue.ttlMs or {}
     local ttlMs = tonumber(ttl.approach)
@@ -24,6 +27,7 @@ function Scheduler:_expiresAt()
     return os.epoch("utc") + math.max(0, ttlMs)
 end
 
+-- function: Compose and play one queued approach announcement for a track.
 function Scheduler:_dispatch(track)
     local request = { type = "approach", track = track }
     local segments, diagnostics = self.composer:compose(request)
@@ -54,11 +58,13 @@ function Scheduler:_dispatch(track)
     end
 end
 
+-- function: Add one detected track approach to the Client-side pending queue.
 function Scheduler:_enqueue(track)
     self.pending[#self.pending + 1] = { track = track }
     os.queueEvent("simplified_approach_pending")
 end
 
+-- function: Dispatch pending approach requests sequentially without blocking input monitoring.
 function Scheduler:_dispatchLoop()
     while true do
         if #self.pending == 0 then
@@ -72,6 +78,7 @@ function Scheduler:_dispatchLoop()
     end
 end
 
+-- function: Run approach input monitoring and queued dispatch concurrently.
 function Scheduler:run()
     parallel.waitForAll(
         function()
